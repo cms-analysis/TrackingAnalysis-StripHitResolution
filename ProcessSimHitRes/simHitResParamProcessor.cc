@@ -1,0 +1,472 @@
+/**
+  @author       Nicola De Filippis
+ */
+
+
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <algorithm>
+#include <queue>
+#include <cassert>
+
+#include <TFile.h>
+#include <TSystem.h>
+#include <TObjArray.h>
+#include <TVector2.h>
+#include <TMath.h>
+#include <TFitResult.h>
+#include <TCanvas.h>
+#include <TRandom3.h>
+#include <TGraphErrors.h>
+
+#if !defined(__CINT__) && !defined(MAKECINT)
+#include "simHitResHelper.h"
+
+
+using namespace std;
+
+
+void printTotalResolution(TTree * tree, TString name){
+  ResContainer * container = new ResContainer; // Resolution container including the resBins and resUnit classes
+  double trackBins[] = {0,10};
+  // Fill the resBins vector
+  // container->inputBin(IB1,MONO,1,1,1,trackBins);   // Inner Barrel (geometry) - TIB 1 80 micron
+  // container->inputBin(IB1,STEREO,1,1,1,trackBins); // Inner Barrel TIB 1 stereo 80 micron
+  // container->inputBin(IB2,BOTH,1,1,1,trackBins);   // Inner Barrel TIB 2 120 micron 
+  // container->inputBin(OB1,BOTH,1,1,1,trackBins);   // Outer Barrel T0B 1 122 micron
+  container->inputBin(OB2,MONO,1,1,1,trackBins);   // TOB 2 183 micron MONO
+  // container->inputBin(OB2,STEREO,1,1,1,trackBins); // TOB 2 183 micron STEREO 
+
+  // container->inputBin(IB1,MONO,2,2,1,trackBins);
+  // container->inputBin(IB1,STEREO,2,2,1,trackBins);
+  // container->inputBin(IB2,BOTH,2,2,1,trackBins);
+  // container->inputBin(OB1,BOTH,2,2,1,trackBins);
+  container->inputBin(OB2,MONO,2,2,1,trackBins);
+  // container->inputBin(OB2,STEREO,2,2,1,trackBins);
+
+  // container->inputBin(IB1,MONO,3,3,1,trackBins);
+  // container->inputBin(IB1,STEREO,3,3,1,trackBins);
+  // container->inputBin(IB2,BOTH,3,3,1,trackBins);
+  // container->inputBin(OB1,BOTH,3,3,1,trackBins);
+  container->inputBin(OB2,MONO,3,3,1,trackBins);
+  // container->inputBin(OB2,STEREO,3,3,1,trackBins);
+
+
+  // container->inputBin(IB1,MONO,4,4,1,trackBins);
+  // container->inputBin(IB1,STEREO,4,4,1,trackBins);
+  // container->inputBin(IB2,BOTH,4,4,1,trackBins);
+  // container->inputBin(OB1,BOTH,4,4,1,trackBins);
+  container->inputBin(OB2,MONO,4,4,1,trackBins);
+  // container->inputBin(OB2,STEREO,4,4,1,trackBins);
+  
+  // container->inputBin(IB1,MONO,5,5,1,trackBins);
+  // container->inputBin(IB1,STEREO,5,5,1,trackBins);
+  // container->inputBin(IB2,BOTH,5,5,1,trackBins);
+  // container->inputBin(OB1,BOTH,5,5,1,trackBins);
+  // container->inputBin(OB2,MONO,5,5,1,trackBins);
+  // container->inputBin(OB2,STEREO,5,5,1,trackBins);
+
+  // container->inputBin(IB1,MONO,6,6,1,trackBins);
+  // container->inputBin(IB1,STEREO,6,6,1,trackBins);
+  // container->inputBin(IB2,BOTH,6,6,1,trackBins);
+  // container->inputBin(OB1,BOTH,6,6,1,trackBins);
+  // container->inputBin(OB2,MONO,6,6,1,trackBins);
+  // container->inputBin(OB2,STEREO,6,6,1,trackBins);
+
+  // container->inputBin(IB1,MONO,7,7,1,trackBins);
+  // container->inputBin(IB1,STEREO,7,7,1,trackBins);
+  // container->inputBin(IB2,BOTH,7,7,1,trackBins);
+  // container->inputBin(OB1,BOTH,7,7,1,trackBins);
+  // container->inputBin(OB2,MONO,7,7,1,trackBins);
+  // container->inputBin(OB2,STEREO,7,7,1,trackBins);
+
+  // container->inputBin(IB1,MONO,8,-1,1,trackBins);
+  // container->inputBin(IB1,STEREO,8,-1,1,trackBins);
+  // container->inputBin(IB2,BOTH,8,-1,1,trackBins);
+  // container->inputBin(OB1,BOTH,8,-1,1,trackBins);
+  // container->inputBin(OB2,MONO,8,-1,1,trackBins);
+  // container->inputBin(OB2,STEREO,8,-1,1,trackBins);
+
+
+  fillRes(name,tree,*container);
+
+  //TObjArray * o = new TObjArray;
+
+  for(unsigned int iB = 0; iB < container->resBins.size(); ++iB){
+    
+    cout << "index of detector type/geometry/cluster width= " << iB+1 << endl;
+    ModuleGeometry thisGeo = container->resBins[iB]->geometry_;
+    //if(IB1 == container->resBins[iB]->geometry_ && MONO == container->resBins[iB]->type_ ){
+    //  cout << endl;
+    //}
+
+    // pair resolution
+    cout << TString::Format("Pair: %.2f +/- %.2f\t",container->resUnits[iB]->pairRes[0],container->resUnits[iB]->pairResErr[0] );
+    // true resolution
+    cout << TString::Format("True: %.2f +/- %.2f\t",container->resUnits[iB]->trueRes[0],container->resUnits[iB]->trueResErr[0] );
+    // track (simple) resolution  
+    cout << TString::Format("Track/Simple: %.2f +/- %.2f\t",container->resUnits[iB]->trackRes[0],container->resUnits[iB]->trackResErr[0] );
+    cout << endl;
+    
+
+    container->resUnits[iB]->doubleDiffHistos[0].SetTitle(container->resBins[iB]->getBinTitle());
+    //new TCanvas();
+    //container->resUnits[iB]->doubleDiffHistos[0].Draw();
+
+    //o->Add(&container->resUnits[iB]->doubleDiffHistos[0]);
+
+
+}
+  //Pint::drawAll(o,"");
+
+  cout << endl;
+
+}
+
+void makeCompOutputs(TTree* tree, TString name){
+  ResContainer * container = new ResContainer;
+//  double trackBins[] = {0,.1,.2,.3,.4,.5,.7,1};
+//  int nBins = 7;
+  double trackBins[] = {0,.05,.1,.2,.3,.4,.5,.6,.7,.8,.9,1,1.5,2,2.5,3};
+  int nBins = 15;
+//  double trackBins[] = {0,1};
+//  int nBins = 1;
+//  container->inputBin(TIB,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(TOB,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(TID,BOTH,1,4,nBins,trackBins);
+
+  
+  //container->inputBin(IB1,MONO,1,4,nBins,trackBins);
+  // container->inputBin(IB1,STEREO,1,4,nBins,trackBins);
+  // container->inputBin(IB2,BOTH,1,4,nBins,trackBins);
+  //container->inputBin(OB2,MONO,1,4,nBins,trackBins);   
+
+//  container->inputBin(IB1,BOTH,2,2,nBins,trackBins);
+//  container->inputBin(IB1,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(IB1,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(IB1,STEREO,1,4,nBins,trackBins);
+//  container->inputBin(IB2,BOTH,1,4,nBins,trackBins);
+  container->inputBin(OB1,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(OB2,MONO,1,4,nBins,trackBins);
+//  container->inputBin(OB2,STEREO,1,4,nBins,trackBins);
+  fillRes(name,tree,*container);
+
+  TFile * outFile = new TFile(name + "_compOutputs.root","RECREATE");
+  for(unsigned int iB = 0; iB < container->resBins.size(); ++iB){
+    TGraphErrors * graphPair = new TGraphErrors();
+    TGraphErrors * graphTrue = new TGraphErrors();
+
+    ResContainer::ResUnit& resUnit = *container->resUnits[iB];
+
+    int nTruePt = 0;
+    int nPairPt = 0;
+    for(unsigned int iL = 0; iL < resUnit.nBins; ++iL){
+      if(resUnit.trueRes[iL] > 0){
+      graphTrue->SetPoint(nTruePt ,resUnit.avgWidths[iL],resUnit.trueRes[iL]);
+      graphTrue->SetPointError(nTruePt ,0,0);
+      nTruePt++;
+      }
+
+      if(resUnit.pairRes[iL] > 0){
+        graphPair->SetPoint(nPairPt ,resUnit.avgWidths[iL],resUnit.pairRes[iL]);
+        graphPair->SetPointError(nPairPt ,0,resUnit.pairResErr[iL]);
+        nPairPt++;
+      }
+    }
+    TString title = container->resBins[iB]->getBinTitle();
+    graphTrue->Write(title + "_trueRes");
+    graphPair->Write(title + "_pairRes");
+  }
+
+  outFile->Close();
+  delete outFile;
+}
+
+void makeParam(TTree* tree, TString name){
+  ResContainer * container = new ResContainer;
+  double trackBins[] = {0,.05,.1,.2,.3,.4,.5,.6,.7,.8,.9,1,1.5,2,2.5,3};
+//  double trackBins[] = {0,.05,.1,1};
+  int nBins = 15;
+//  double trackBins[] = {0,1};
+//  int nBins = 1;
+
+  //Start with Barrel low cluster multiplicity
+
+//    container->inputBin(IB1,BOTH,1,1,nBins,trackBins);
+//    container->inputBin(IB2,BOTH,1,1,nBins,trackBins);
+//    container->inputBin(OB1,BOTH,1,1,nBins,trackBins);
+//    container->inputBin(OB2,BOTH,1,1,nBins,trackBins);
+//    container->inputBin(IB1,BOTH,2,2,nBins,trackBins);
+//    container->inputBin(IB2,BOTH,2,2,nBins,trackBins);
+//    container->inputBin(OB1,BOTH,2,2,nBins,trackBins);
+//    container->inputBin(OB2,BOTH,2,2,nBins,trackBins);
+//    container->inputBin(IB1,BOTH,3,3,nBins,trackBins);
+//    container->inputBin(IB2,BOTH,3,3,nBins,trackBins);
+//    container->inputBin(OB1,BOTH,3,3,nBins,trackBins);
+//    container->inputBin(OB2,BOTH,3,3,nBins,trackBins);
+//    container->inputBin(IB1,BOTH,4,4,nBins,trackBins);
+//    container->inputBin(IB2,BOTH,4,4,nBins,trackBins);
+//    container->inputBin(OB1,BOTH,4,4,nBins,trackBins);
+//    container->inputBin(OB2,BOTH,4,4,nBins,trackBins);
+
+    //Now them compilied ///leave 1 out
+//    container->inputBin(IB1,BOTH,2,4,nBins,trackBins);
+//    container->inputBin(IB2,BOTH,2,4,nBins,trackBins);
+//    container->inputBin(OB1,BOTH,2,4,nBins,trackBins);
+//    container->inputBin(OB2,BOTH,2,4,nBins,trackBins);
+
+  //Now check the Barrel versus pieces at higher values
+//  container->inputBin(BARREL,BOTH,2,4,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,5,5,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,6,6,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,7,7,nBins,trackBins);
+//  container->inputBin(TOB,BOTH,5,5,nBins,trackBins);
+//  container->inputBin(TOB,BOTH,6,6,nBins,trackBins);
+//  container->inputBin(TOB,BOTH,7,7,nBins,trackBins);
+
+
+  //Now look at the endcaps
+//  container->inputBin(BARREL,BOTH,2,4,nBins,trackBins);
+//  container->inputBin(TID,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(TID,BOTH,2,2,nBins,trackBins);
+//  container->inputBin(TID,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(TID,BOTH,4,4,nBins,trackBins);
+//
+//  container->inputBin(TEC,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,2,2,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,4,4,nBins,trackBins);
+
+  //High PT
+//  container->inputBin(ENDCAP,BOTH,2,4,nBins,trackBins);
+//
+//    container->inputBin(BARREL,BOTH,5,5,nBins,trackBins);
+//    container->inputBin(BARREL,BOTH,6,6,nBins,trackBins);
+//    container->inputBin(BARREL,BOTH,7,7,nBins,trackBins);
+//
+//    container->inputBin(TID,BOTH,5,5,nBins,trackBins);
+//    container->inputBin(TID,BOTH,6,6,nBins,trackBins);
+//    container->inputBin(TID,BOTH,7,7,nBins,trackBins);
+//    container->inputBin(TEC,BOTH,5,5,nBins,trackBins);
+//    container->inputBin(TEC,BOTH,6,6,nBins,trackBins);
+//    container->inputBin(TEC,BOTH,7,7,nBins,trackBins);
+
+
+  //Final Numbers
+  double finTrackBins[] = {0,.05,.1,.15,.2,.3,.4,.5,.6,.7,.8,.9,1,1.25,1.5,2,2.5,3};
+  int nFineTrackBins = 17;
+
+  container->inputBin(ALL,BOTH,1,4,nFineTrackBins,finTrackBins);
+
+  double singleBins[] = {0,3};
+  int nSingleBin=1;
+//  container->inputBin(ENDCAP,BOTH,1,4,nFineTrackBins,finTrackBins);
+  container->inputBin(TID,BOTH,5,5,nSingleBin,singleBins);
+  container->inputBin(TID,BOTH,6,6,nSingleBin,singleBins);
+  container->inputBin(TID,BOTH,7,7,nSingleBin,singleBins);
+  container->inputBin(TID,BOTH,8,8,nSingleBin,singleBins);
+  container->inputBin(TID,BOTH,9,9,nSingleBin,singleBins);
+  container->inputBin(TID,BOTH,10,10,nSingleBin,singleBins);
+
+  container->inputBin(TEC,BOTH,5,5,nSingleBin,singleBins);
+  container->inputBin(TEC,BOTH,6,6,nSingleBin,singleBins);
+  container->inputBin(TEC,BOTH,7,7,nSingleBin,singleBins);
+  container->inputBin(TEC,BOTH,8,8,nSingleBin,singleBins);
+  container->inputBin(TEC,BOTH,9,9,nSingleBin,singleBins);
+  container->inputBin(TEC,BOTH,10,10,nSingleBin,singleBins);
+
+  container->inputBin(TIB,BOTH,5,5,nSingleBin,singleBins);
+  container->inputBin(TIB,BOTH,6,6,nSingleBin,singleBins);
+  container->inputBin(TIB,BOTH,7,7,nSingleBin,singleBins);
+  container->inputBin(TIB,BOTH,8,8,nSingleBin,singleBins);
+  container->inputBin(TIB,BOTH,9,9,nSingleBin,singleBins);
+  container->inputBin(TIB,BOTH,10,10,nSingleBin,singleBins);
+
+  container->inputBin(TOB,BOTH,5,5,nSingleBin,singleBins);
+  container->inputBin(TOB,BOTH,6,6,nSingleBin,singleBins);
+  container->inputBin(TOB,BOTH,7,7,nSingleBin,singleBins);
+  container->inputBin(TOB,BOTH,8,8,nSingleBin,singleBins);
+  container->inputBin(TOB,BOTH,9,9,nSingleBin,singleBins);
+  container->inputBin(TOB,BOTH,10,10,nSingleBin,singleBins);
+
+//  container->inputBin(TOB,BOTH,2,4,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,2,4,nBins,trackBins);
+
+//  container->inputBin(TEC,BOTH,2,4,nBins,trackBins);
+//  container->inputBin(TID,BOTH,2,4,nBins,trackBins);
+
+
+
+
+
+
+//  container->inputBin(IB1,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(IB2,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(TID,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(TID,BOTH,2,2,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,2,2,nBins,trackBins);
+//  container->inputBin(IB1,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(IB2,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(TID,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(IB1,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(IB2,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(TID,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(TEC,BOTH,4,4,nBins,trackBins);
+
+//  container->inputBin(TIB,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(TOB,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(W1A,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W2A,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W3A,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W1B,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W2B,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W3B,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W4 ,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W5 ,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W6 ,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W7 ,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(W1A,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W2A,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W3A,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W1B,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W2B,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W3B,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W4 ,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W5 ,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W6 ,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W7 ,BOTH,2,3,nBins,trackBins);
+//  container->inputBin(W1A,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W2A,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W3A,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W1B,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W2B,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W3B,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W4 ,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W5 ,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W6 ,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(W7 ,BOTH,4,4,nBins,trackBins);
+
+
+//  container->inputBin(OB1,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,1,4,nBins,trackBins);
+
+//  container->inputBin(OB1,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,2,2,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,5,5,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,6,6,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,7,7,nBins,trackBins);
+//  container->inputBin(OB1,BOTH,8,-1,nBins,trackBins);
+//
+//  container->inputBin(OB2,BOTH,1,1,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,2,2,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,3,3,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,4,4,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,5,5,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,6,6,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,7,7,nBins,trackBins);
+//  container->inputBin(OB2,BOTH,8,-1,nBins,trackBins);
+
+//  container->inputBin(TIB,BOTH,1,4,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,5,5,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,6,6,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,7,7,nBins,trackBins);
+//  container->inputBin(TIB,BOTH,8,-1,nBins,trackBins);
+
+  fillRes(name,tree,*container);
+
+
+
+  TFile * outFile = new TFile(name + "_paramOutputs.root","RECREATE");
+  for(unsigned int iB = 0; iB < container->resBins.size(); ++iB){
+    TGraphErrors * graphTrue = new TGraphErrors();
+    ResContainer::ResUnit& resUnit = *container->resUnits[iB];
+//    TObjArray * o = new TObjArray;
+
+    int nTruePt = 0;
+    for(unsigned int iL = 0; iL < resUnit.nBins; ++iL){
+      if(resUnit.trueRes[iL] > 0){
+      graphTrue->SetPoint(nTruePt ,resUnit.avgWidths[iL],resUnit.trueRes[iL]);
+      graphTrue->SetPointError(nTruePt ,0,resUnit.trueResErr[iL]);
+
+      resUnit.trueResHistos[iL].SetTitle(TString::Format("%.2f - %.2f",finTrackBins[iL],finTrackBins[iL+1]));
+      new TCanvas();
+      resUnit.trueResHistos[iL].Draw();
+//      o->Add(&resUnit.trueResHistos[iL]);
+      nTruePt++;
+      }
+    }
+
+//    Pint::drawAll(o,container->resBins[iB]->getBinTitle());
+
+
+    TString title = container->resBins[iB]->getBinTitle();
+    graphTrue->Write(title + "_trueRes");
+  }
+
+  outFile->Close();
+  delete outFile;
+}
+
+
+
+
+#endif //!CINT
+
+//_____________________________________________________________________________
+void simHitResParamProcessor        (TString fileName = "", TString name = "")
+{
+
+
+
+   TFile * f = new TFile(fileName,"read");
+   //f->cd("analysis");
+   //TTree * tree = (TTree*)gDirectory->Get("hits");
+   TDirectory* dir = f->GetDirectory("analysis");
+   TTree *tree;
+   dir->GetObject("hits", tree);
+
+   printTotalResolution(tree,name);
+   makeCompOutputs(tree,name);
+   makeParam(tree,name);
+//
+//   //Ok let's do something simple!
+//
+//
+//   vector<double> widthLowEdges;
+//   widthLowEdges.push_back(-.025);
+//   widthLowEdges.push_back(.1);
+//   widthLowEdges.push_back(.2);
+//   widthLowEdges.push_back(.3);
+//   widthLowEdges.push_back(.4);
+//   widthLowEdges.push_back(.5);
+//   widthLowEdges.push_back(.7);
+//   widthLowEdges.push_back(1);
+//
+//
+//   TFile * f2 = new TFile("name.root","recreate");
+//   f2->cd();
+//   TString cut = TString::Format("geom == %i",det );
+//   TTree *      newTree = tree->CopyTree(cut );
+//   cout << endl<<tree->GetEntries() <<" "<<newTree->GetEntries() <<endl << endl;
+//
+//    vector<double> trueRes;vector<double>pairRes;vector<double>pairResE; vector<double>fastRes; vector<double>averageX;
+//    fillRes(true,static_cast<ModuleGeometry>(det),static_cast<ModuleType>(stereo), 1,4, name, newTree,  5, widthLowEdges, trueRes, pairRes,pairResE, fastRes ,averageX  );
+//    makeGraphs(name,trueRes, pairRes,pairResE, fastRes ,averageX );
+
+}
+
+
+
+// 
