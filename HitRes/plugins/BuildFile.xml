@@ -32,6 +32,6 @@
 <use   name="boost"/>
 <use   name="root"/>
 <lib   name="MathMore"/>
-<library   file="*.cc" name="TestHitResHitResPlugins">
+<library   file="*.cc" name="StripHitResolutionHitResPlugins">
   <flags   EDM_PLUGIN="1"/>
 </library>
